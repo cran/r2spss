@@ -10,6 +10,12 @@ set_header(highlight = "")  # do not use the Sweave.sty package
 ## ----results="hide", message=FALSE, warning=FALSE------------------------
 library("r2spss")
 
+## ----eval=FALSE----------------------------------------------------------
+#  r2spss.sty(path = ".")
+
+## ------------------------------------------------------------------------
+r2spss_options$set(version = "legacy")
+
 ## ----results="hide", message=FALSE, warning=FALSE------------------------
 data("Eredivisie")
 data("Exams")
@@ -21,43 +27,43 @@ Eredivisie$logMarketValue <- log(Eredivisie$MarketValue)
 descriptives(Eredivisie, c("Age", "Minutes", "logMarketValue"))
 
 ## ------------------------------------------------------------------------
-histSPSS(Eredivisie, "logMarketValue")
+histogram(Eredivisie, "logMarketValue")
 
 ## ------------------------------------------------------------------------
-boxplotSPSS(Eredivisie, "logMarketValue")
+box_plot(Eredivisie, "logMarketValue")
 
 ## ------------------------------------------------------------------------
-plotSPSS(Eredivisie, c("Age", "logMarketValue"))
+scatter_plot(Eredivisie, c("Age", "logMarketValue"))
 
 ## ------------------------------------------------------------------------
-plotSPSS(Eredivisie, c("Age", "Minutes", "logMarketValue"))
+scatter_plot(Eredivisie, c("Age", "Minutes", "logMarketValue"))
 
 ## ----results="asis"------------------------------------------------------
-tTest(Exams, "Resit", mu = 5.5)
+t_test(Exams, "Resit", mu = 5.5)
 
 ## ----results="asis"------------------------------------------------------
-tTest(Exams, c("Resit", "Regular"))
+t_test(Exams, c("Resit", "Regular"))
 
 ## ----results="asis"------------------------------------------------------
-wilcoxonTest(Exams, c("Regular", "Resit"))
+wilcoxon_test(Exams, c("Regular", "Resit"))
 
 ## ----results="asis"------------------------------------------------------
-signTest(Exams, c("Regular", "Resit"))
+sign_test(Exams, c("Regular", "Resit"))
 
 ## ------------------------------------------------------------------------
-boxplotSPSS(Exams, c("Regular", "Resit"))
+box_plot(Exams, c("Regular", "Resit"))
 
 ## ----eval=FALSE----------------------------------------------------------
-#  tTest(Eredivisie, "logMarketValue", group = "Foreign")
+#  t_test(Eredivisie, "logMarketValue", group = "Foreign")
 
 ## ----echo=FALSE, results="asis"------------------------------------------
-tTest(Eredivisie, "logMarketValue", group = "Foreign")
+t_test(Eredivisie, "logMarketValue", group = "Foreign")
 
 ## ----results="asis"------------------------------------------------------
-wilcoxonTest(Eredivisie, "MarketValue", group = "Foreign")
+wilcoxon_test(Eredivisie, "MarketValue", group = "Foreign")
 
 ## ------------------------------------------------------------------------
-boxplotSPSS(Eredivisie, "logMarketValue", group = "Foreign")
+box_plot(Eredivisie, "logMarketValue", group = "Foreign")
 
 ## ----results="asis"------------------------------------------------------
 oneway <- ANOVA(Eredivisie, "logMarketValue", group = "Position")
@@ -67,7 +73,7 @@ oneway
 plot(oneway)
 
 ## ----results="asis"------------------------------------------------------
-kruskalTest(Eredivisie, "MarketValue", group = "Position")
+kruskal_test(Eredivisie, "MarketValue", group = "Position")
 
 ## ----results="asis"------------------------------------------------------
 twoway <- ANOVA(Eredivisie, "logMarketValue",
@@ -77,19 +83,23 @@ twoway
 ## ----fig.width=6, out.width = "0.7\\textwidth"---------------------------
 plot(twoway)
 
+## ----results="asis"------------------------------------------------------
+chisq_test(Eredivisie, "Position", p = c(1, 4, 3, 3)/11)
+
+## ----results="asis"------------------------------------------------------
+chisq_test(Eredivisie, c("Position", "Foreign"))
+
 ## ------------------------------------------------------------------------
 Eredivisie$AgeSq <- Eredivisie$Age^2
 
 ## ----results="asis"------------------------------------------------------
-regression(logMarketValue ~ Age + AgeSq,
-           logMarketValue ~ Age + AgeSq + Contract + Foreign,
-           data = Eredivisie)
-
-## ----results="asis"------------------------------------------------------
 fit <- regression(logMarketValue ~ Age + AgeSq,
                   logMarketValue ~ Age + AgeSq + Contract + Foreign,
-                  data = Eredivisie, change = TRUE)
-print(fit, statistics = "summary")
+                  data = Eredivisie)
+fit
+
+## ----results="asis"------------------------------------------------------
+print(fit, statistics = "summary", change = TRUE)
 
 ## ------------------------------------------------------------------------
 plot(fit, which = "histogram")

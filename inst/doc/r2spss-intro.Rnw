@@ -7,6 +7,14 @@
 
 %% other packages
 \usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{makecell}
+
+%% define colors
+\definecolor{graySPSS}{gray}{0.87}
+\definecolor{lightgraySPSS}{RGB}{250,250,252}
+\definecolor{darkgraySPSS}{gray}{0.66}
+\definecolor{blueSPSS}{RGB}{39,73,96}
 
 
 %% -- Article metainformation (author, title, ...) -----------------------------
@@ -33,10 +41,10 @@ teaching materials.  Rather than copying-and-pasting \proglang{SPSS} output
 into documents, \proglang{R} code that mocks up \proglang{SPSS} output can be
 integrated directly into dynamic \proglang{LaTeX} documents with tools such
 as the \proglang{R} package \pkg{knitr}.  Package \pkg{r2spss} provides
-functionality for methods that are typically covered in introductory statistics
-courses: descriptive statistics, common hypothesis tests, ANOVA, and linear
-regression, as well as boxplots, histograms, scatterplots, and line plots
-(including profile plots).
+functionality for statistical techniques that are typically covered in
+introductory statistics courses: descriptive statistics, common hypothesis
+tests, ANOVA, and linear regression, as well as box plots, histograms,
+scatter plots, and line plots (including profile plots).
 }
 
 %% - \Keywords{} with LaTeX markup, at least one required
@@ -118,6 +126,7 @@ developments for creating teaching materials with \proglang{SPSS} output by
 mocking up such output with \proglang{R}.
 
 
+
 %% -- Manuscript ---------------------------------------------------------------
 
 %% - In principle "as usual" again.
@@ -128,6 +137,103 @@ mocking up such output with \proglang{R}.
 %%   (e.g., a function synopsis or list of arguments), the environment {Code}
 %%   is recommended. Alternatively, a plain {verbatim} can also be used.
 %%   (For executed code see the next section.)
+
+
+% ------------------------------------
+% LaTeX requirements and knitr options
+% ------------------------------------
+
+\section[LaTeX documents containing output from r2spss]%
+{\proglang{LaTeX} documents containing output from \pkg{r2spss}}
+
+We first load the package to discuss its main functionality to generate
+\proglang{LaTeX} tables.
+%
+<<results="hide", message=FALSE, warning=FALSE>>=
+library("r2spss")
+@
+
+
+\subsection[LaTeX requirements]{\proglang{LaTeX} requirements}
+
+\proglang{LaTeX} tables created with package \pkg{r2spss} build upon several
+\proglang{LaTeX} packages.  A \proglang{LaTeX} style file that includes all
+requirements can be produced with function \code{r2spss.sty()}.  By default,
+it prints the content of the style file on the \proglang{R} console, but its
+only argument \code{path} can be used to specify the path to a folder in
+which to put the file \emph{r2spss.sty}.  For instance, the following command
+can be used to put the style file in the current working directory.
+%
+<<eval=FALSE>>=
+r2spss.sty(path = ".")
+@
+
+After putting the style file in the folder that contains your \proglang{LaTeX}
+document, the following command should be included in the preamble of your
+\proglang{LaTeX} document, i.e., somewhere in between \verb+\documentclass{}+
+and \verb+\begin{document}+.
+\begin{Code}
+\usepackage{r2spss}
+\end{Code}
+
+
+\subsection[Workhorse functions to create LaTeX tables with r2spss]%
+{Workhorse functions to create \proglang{LaTeX} tables with \pkg{r2spss}}
+
+Functions in package \pkg{r2spss} create certain \proglang{R} objects, whose
+\code{print()} method prints the \proglang{LaTeX} tables that mimic the
+corresponding \proglang{SPSS} output.  Essentially, such a \code{print()}
+method first calls function \code{to_SPSS()}, which produces an object of class
+\code{"SPSS_table"}.  Its component \code{table} contains a data frame of the
+results in SPSS format.  Other components of the object contain any necessary
+additional information of the SPSS table, such as the main title, the header
+layout, or footnotes.  Afterwards, the \code{print()} method calls function
+\code{to_latex()} with the \code{"SPSS_table"} object to print the
+\proglang{LaTeX} table.
+
+These two function can also be called separately by the user, which allows
+for further customization of the \proglang{LaTeX} tables.  Some examples
+can be found in the help file of \code{to_SPSS()} or \code{to_latex()},
+which can be accessed from the \proglang{R} console with \code{?to_SPSS} and
+\code{?to_latex}, respectively.  In addition, the \code{"data.frame"} method
+of \code{to_latex()} allows to extend the functionality of \pkg{r2spss} with
+additional \proglang{LaTeX} tables that mimic the look of \proglang{SPSS}
+output.
+
+Package \pkg{r2spss} can create output that mimics the look of current
+\proglang{SPSS} versions, as well as the look of older versions.  The above
+mentioned functions contain the argument \code{version} for specifying which
+type of output to create.  Possible values are \code{"modern"} to mimic recent
+versions and \code{"legacy"} to mimic older versions.  \proglang{LaTeX} tables
+that mimic the look of recent SPSS version thereby build upon the
+\proglang{LaTeX} package \pkg{nicematrix} \citep{nicematrix} and its
+\code{NiceTabular} environment, which is preferred for its seamless display of
+background colors in the table.
+
+However, \pkg{r2spss} requires \pkg{nicematrix} version 6.5 (2022-01-23) or
+later.  It is also important to note that tables using the \code{NiceTabular}
+environment may require several \proglang{LaTeX} compilations to be displayed
+correctly.  For portability reasons, this vignette therefore only displays
+\proglang{LaTeX} tables that mimic the simpler look of older \proglang{SPSS}
+versions.  For convenience, such a global preference within an \proglang{R}
+session can be set with the accessor function \code{r2spss_options$set()}.
+
+<<>>=
+r2spss_options$set(version = "legacy")
+@
+
+
+\subsection[Dynamic documents and knitr options]%
+{Dynamic documents and \pkg{knitr} options}
+
+Package \pkg{r2spss} is the most useful when writing dynamic \proglang{LaTeX}
+documents with tools such as the \proglang{R} package \pkg{knitr}
+\citep{xie15, knitr}.  When creating \proglang{LaTeX} tables in \proglang{R}
+code chunks with \pkg{knitr}, the output of the chunk should be written
+directly into the output document by setting the chunk option
+\verb+results='asis'+.  For more information on \pkg{knitr} chunk options,
+in particular various options for figures, please see
+\url{https://yihui.org/knitr/options/}.
 
 
 %% -- Illustrations ------------------------------------------------------------
@@ -153,29 +259,8 @@ mocking up such output with \proglang{R}.
 \section[Illustrations: Using package r2spss]%
 {Illustrations: Using package \pkg{r2spss}} \label{sec:illustrations}
 
-We start by loading the package.
-%
-<<results="hide", message=FALSE, warning=FALSE>>=
-library("r2spss")
-@
-
-
-\subsection[LaTeX requirements and knitr options]%
-{\proglang{LaTeX} requirements and \pkg{knitr} options}
-
-Some of the tables produced by \pkg{r2spss} require the \proglang{LaTeX}
-package \pkg{amsmath}, hence the following command should be included in the
-preamble of your \proglang{LaTeX} document.
-\begin{Code}
-% somewhere before \begin{document}
-\usepackage{amsmath}
-\end{Code}
-
-When creating \proglang{LaTeX} tables in \proglang{R} code chunks with
-\pkg{knitr}, the output of the chunk should be written directly into the output
-document by setting the chunk option \verb+results='asis'+.  For more
-information on \pkg{knitr} chunk options, in particular various options for
-figures, please see \url{https://yihui.org/knitr/options/}.
+Several examples showcase the functionality of \pkg{r2spss} to mock up
+\proglang{SPSS} tables and graphics.
 
 
 \subsection{Example data sets}
@@ -215,36 +300,36 @@ descriptives(Eredivisie, c("Age", "Minutes", "logMarketValue"))
 @
 \end{center}
 
-Functions \code{histSPSS()} and \code{boxplotSPSS()} can be used to create a
-histogram or boxplot, respectively, of a specified variable.
+Functions \code{histogram()} and \code{box_plot()} can be used to create a
+histogram or box plot, respectively, of a specified variable.
 <<>>=
-histSPSS(Eredivisie, "logMarketValue")
+histogram(Eredivisie, "logMarketValue")
 @
 %
 <<>>=
-boxplotSPSS(Eredivisie, "logMarketValue")
+box_plot(Eredivisie, "logMarketValue")
 @
 
-A scatterplot or scatterplot matrix can be produced with function
-\code{plotSPSS()} by specifying the corresponding variables.
+A scatter plot or scatter plot matrix can be produced with function
+\code{scatter_plot()} by specifying the corresponding variables.
 <<>>=
-plotSPSS(Eredivisie, c("Age", "logMarketValue"))
+scatter_plot(Eredivisie, c("Age", "logMarketValue"))
 @
 %
 <<>>=
-plotSPSS(Eredivisie, c("Age", "Minutes", "logMarketValue"))
+scatter_plot(Eredivisie, c("Age", "Minutes", "logMarketValue"))
 @
 
 \subsection{Analyzing one sample}
 
 With the \code{Exams} data, we can perform a one-sample $t$ test on whether the
 average grade on the resit exam differs from 5.5, which is the minimum passing
-grade in the Netherlands.  For this purpose, we can use function \code{tTest()}
+grade in the Netherlands.  For this purpose, we can use function \code{t_test()}
 with a single variable as well as the value under the null-hypothesis.
 %
 \begin{center}
 <<results="asis">>=
-tTest(Exams, "Resit", mu = 5.5)
+t_test(Exams, "Resit", mu = 5.5)
 @
 \end{center}
 
@@ -253,27 +338,27 @@ tTest(Exams, "Resit", mu = 5.5)
 
 Similarly, we can perform a paired-sample $t$ test on whether the average
 grades differ between the regular exam and the resit by supplying the two
-corresponding variables to function \code{tTest()}.
+corresponding variables to function \code{t_test()}.
 %
 \begin{center}
 <<results="asis">>=
-tTest(Exams, c("Resit", "Regular"))
+t_test(Exams, c("Resit", "Regular"))
 @
 \end{center}
 
 As nonparametric alternatives, we can perform a Wilcoxon signed rank test
-with function \code{wilcoxonTest()} or a sign test with function
-\code{signTest()}.
+with function \code{wilcoxon_test()} or a sign test with function
+\code{sign_test()}.
 %
 \begin{center}
 <<results="asis">>=
-wilcoxonTest(Exams, c("Regular", "Resit"))
+wilcoxon_test(Exams, c("Regular", "Resit"))
 @
 \end{center}
 %
 \begin{center}
 <<results="asis">>=
-signTest(Exams, c("Regular", "Resit"))
+sign_test(Exams, c("Regular", "Resit"))
 @
 \end{center}
 
@@ -283,48 +368,48 @@ differences in the form \code{Resit - Regular}.  This behavior is carried over
 from \proglang{SPSS}.
 
 To check which of these tests are suitable for the given data, we can for
-example use a boxplot.  Function \code{boxplotSPSS()} allows to specify
+example use a box plot.  Function \code{box_plot()} allows to specify
 multiple variables to be plotted.
 %
 <<>>=
-boxplotSPSS(Exams, c("Regular", "Resit"))
+box_plot(Exams, c("Regular", "Resit"))
 @
 
 
 \subsection{Comparing two groups}
 
-An independent-samples $t$ test can be performed with function \code{tTest()}
+An independent-samples $t$ test can be performed with function \code{t_test()}
 by specifying the numeric variable of interest as well as a grouping variable.
 As an example, we test whether the average log market values differ between
 Dutch and foreign football players.
 %
 \begin{center}
 <<eval=FALSE>>=
-tTest(Eredivisie, "logMarketValue", group = "Foreign")
+t_test(Eredivisie, "logMarketValue", group = "Foreign")
 @
 \footnotesize
 <<echo=FALSE, results="asis">>=
-tTest(Eredivisie, "logMarketValue", group = "Foreign")
+t_test(Eredivisie, "logMarketValue", group = "Foreign")
 @
 \end{center}
 
 As a nonparametric alternative, we can perform a Wilcoxon rank sum test
-with function \code{wilcoxonTest()} in a similar manner.  Note that it is
+with function \code{wilcoxon_test()} in a similar manner.  Note that it is
 not necessary to use the logarithms of the market values here, as this test
 works with ranks instead of the observed values.
 %
 \begin{center}
 <<results="asis">>=
-wilcoxonTest(Eredivisie, "MarketValue", group = "Foreign")
+wilcoxon_test(Eredivisie, "MarketValue", group = "Foreign")
 @
 \end{center}
 
-We can again use a boxplot to check whether the $t$ test is  suitable for the
-given data, as function \code{boxplotSPSS()} allows to specify a grouping
+We can again use a box plot to check whether the $t$ test is  suitable for the
+given data, as function \code{box_plot()} allows to specify a grouping
 variable as well.
 %
 <<>>=
-boxplotSPSS(Eredivisie, "logMarketValue", group = "Foreign")
+box_plot(Eredivisie, "logMarketValue", group = "Foreign")
 @
 
 
@@ -348,12 +433,12 @@ plot(oneway)
 @
 
 A nonparametric alternative based on ranks is the Kruskal-Wallis test, which
-can be applied with function \code{kruskalTest()}.  It is again not necessary
+can be applied with function \code{kruskal_test()}.  It is again not necessary
 to use the logarithms of the market values for this test.
 %
 \begin{center}
 <<results="asis">>=
-kruskalTest(Eredivisie, "MarketValue", group = "Position")
+kruskal_test(Eredivisie, "MarketValue", group = "Position")
 @
 \end{center}
 
@@ -370,15 +455,42 @@ twoway
 
 We can again produce a profile plot with the \code{plot()} method for the
 resulting object.  Argument \code{which} can be used to specify which of the
-two grouping variables should be used on the $x$-axis of the profile plot.
+two grouping variables should be used on the $x$-axis of the profile plot, with
+the default being the first grouping variable.
 %
 <<fig.width=6, out.width = "0.7\\textwidth">>=
 plot(twoway)
 @
 
-The \code{plot()} method illustrated in this section calls function
-\code{linesSPSS()} to produce the plots.  The latter is more generally
-applicable and can also be used, e.g., for plotting time series.
+The \code{plot()} method illustrated works similarly to function
+\code{line_plot()}.  The latter is more generally applicable and
+can also be used, e.g., for plotting time series.
+
+
+\subsection[Chi-squared tests]{$\chi^{2}$ tests}
+
+Function \code{chisq_test()} implements $\chi^{2}$ goodness-of-fit tests and
+$\chi^{2}$ tests on independence.  With the \code{Eredivisie} data, we can
+first perform a goodness-of-fit test to see whether the traditional Dutch 4-3-3
+system of total football is still reflected in player composition of Dutch
+football teams.  In other words, we test for a multinomial distribution of
+variable \code{Position} with the probabilities $1/11$, $4/11$, $3/11$, and
+$3/11$ for goalkeepers, defenders, midfielders, and forwards, respectively.
+%
+\begin{center}
+<<results="asis">>=
+chisq_test(Eredivisie, "Position", p = c(1, 4, 3, 3)/11)
+@
+\end{center}
+
+Furthermore, we can test whether the categorical variables \code{Position} and
+\code{Foreign} are independent, i.e., whether the proportions of Dutch and
+foreign players are the same for all playing positions.
+\begin{center}
+<<results="asis">>=
+chisq_test(Eredivisie, c("Position", "Foreign"))
+@
+\end{center}
 
 
 \subsection{Linear regression}
@@ -399,32 +511,30 @@ usual in \proglang{R}, we specify the regression models with formulas.
 %
 \begin{center}
 <<results="asis">>=
-regression(logMarketValue ~ Age + AgeSq,
-           logMarketValue ~ Age + AgeSq + Contract + Foreign,
-           data = Eredivisie)
+fit <- regression(logMarketValue ~ Age + AgeSq,
+                  logMarketValue ~ Age + AgeSq + Contract + Foreign,
+                  data = Eredivisie)
+fit
 @
 \end{center}
 
-Argument \code{change} can be set to \code{TRUE} in order to include a test
-on the change in $R^{2}$ from one model to the next.  If we then only want to
-print the corresponding table containing the model summaries, we can use the
-argument \code{statistics} of the \code{print()} method.
+If we only want to print the table containing the model summaries, we can use
+the argument \code{statistics} of the \code{print()} method.  In addition,
+argument \code{change} can be set to \code{TRUE} in order to include a test
+on the change in $R^{2}$ from one model to the next.
 
 \begin{center}
 <<results="asis">>=
-fit <- regression(logMarketValue ~ Age + AgeSq,
-                  logMarketValue ~ Age + AgeSq + Contract + Foreign,
-                  data = Eredivisie, change = TRUE)
-print(fit, statistics = "summary")
+print(fit, statistics = "summary", change = TRUE)
 @
 \end{center}
 
-Of course, the \code{print()} methods for all objects returned by functions
-from package \pkg{r2spss} allow to select which tables to print.  See the
-respective help files for details.
+Of course, all \code{print()} methods for objects returned by functions from
+package \pkg{r2spss} allow to select which tables to print.  See the respective
+help files for details.
 
 The \code{plot()} method of the regression results can be used to create a
-histogram of the residuals or a scatterplot of the standardized residuals
+histogram of the residuals or a scatter plot of the standardized residuals
 against the standardized fitted values.  Argument \code{which} can be used
 to select between those two plots.  Mimicking \proglang{SPSS} functionality,
 the plot is created for the \emph{last} specified model in the call to

@@ -2,61 +2,82 @@
 % Please edit documentation in R/regression.R
 \name{regression}
 \alias{regression}
-\alias{print.regressionSPSS}
-\alias{coef.regressionSPSS}
-\alias{df.residual.regressionSPSS}
-\alias{fitted.regressionSPSS}
-\alias{residuals.regressionSPSS}
-\alias{plot.regressionSPSS}
+\alias{to_SPSS.regression_SPSS}
+\alias{print.regression_SPSS}
+\alias{coef.regression_SPSS}
+\alias{df.residual.regression_SPSS}
+\alias{fitted.regression_SPSS}
+\alias{residuals.regression_SPSS}
+\alias{plot.regression_SPSS}
 \title{Linear Regression}
 \usage{
-regression(..., data, labels = NULL, change = FALSE)
+regression(..., data, labels = NULL)
 
-\method{print}{regressionSPSS}(x, digits = 3, statistics = c("summary", "anova", "estimates"), ...)
+\method{to_SPSS}{regression_SPSS}(
+  object,
+  statistics = c("estimates", "anova", "summary"),
+  change = FALSE,
+  version = r2spss_options$get("version"),
+  ...
+)
 
-\method{coef}{regressionSPSS}(object, ...)
+\method{print}{regression_SPSS}(
+  x,
+  statistics = c("summary", "anova", "estimates"),
+  change = FALSE,
+  version = r2spss_options$get("version"),
+  ...
+)
 
-\method{df.residual}{regressionSPSS}(object, ...)
+\method{coef}{regression_SPSS}(object, ...)
 
-\method{fitted}{regressionSPSS}(object, standardized = FALSE, ...)
+\method{df.residual}{regression_SPSS}(object, ...)
 
-\method{residuals}{regressionSPSS}(object, standardized = FALSE, ...)
+\method{fitted}{regression_SPSS}(object, standardized = FALSE, ...)
 
-\method{plot}{regressionSPSS}(
+\method{residuals}{regression_SPSS}(object, standardized = FALSE, ...)
+
+\method{plot}{regression_SPSS}(
   x,
   y,
   which = c("histogram", "scatter"),
-  main = NULL,
-  xlab = NULL,
-  ylab = NULL,
+  version = r2spss_options$get("version"),
   ...
 )
 }
 \arguments{
 \item{\dots}{for \code{regression}, at least one formula specifying a
 regression model.  Different models can be compared by supplying multiple
-formulas.  For the \code{plot} method, additional arguments to be passed
-down, in particular graphical parameters (see also \code{\link{histSPSS}}
-and \code{\link{plotSPSS}}).  For other methods, this is currently ignored.}
+formulas.  For  the \code{to_SPSS} and \code{print} methods, additional
+arguments to be passed down to \code{\link{format_SPSS}}.  For the
+\code{plot} method, additional arguments to be passed down to
+\code{\link{histSPSS}} or \code{\link{plotSPSS}}, in particular graphical
+parameters.  For other methods, this is currently ignored.}
 
 \item{data}{a data frame containing the variables.}
 
 \item{labels}{a character or numeric vector giving labels for the
 regression models in the output tables.}
 
-\item{change}{a logical indicating whether tests on the
-\eqn{R^2}{R-squared} change should be included in model summaries.}
-
-\item{x, object}{an object of class \code{"regressionSPSS"} as returned by
+\item{object, x}{an object of class \code{"regression_SPSS"} as returned by
 function \code{regression}.}
 
-\item{digits}{an integer giving the number of digits after the comma to be
-printed in the LaTeX tables.}
-
-\item{statistics}{a character vector specifying which LaTeX tables should
-be printed.  Available options are \code{"summary"} for model summaries,
+\item{statistics}{a character string or vector specifying which SPSS tables
+to produce.  Available options are \code{"summary"} for model summaries,
 \code{"anova"} for ANOVA results, and \code{"estimates"} for estimated
-coefficients.  The default is to print all tables.}
+coefficients.  For the \code{to_SPSS} method, only one option is allowed
+(the default is the table of ANOVA results), but the \code{print} method
+allows several options (the default is to print all tables).}
+
+\item{change}{a logical indicating whether tests on the
+\eqn{R^2}{R-squared} change should be included in the table with model
+summaries (if \code{statistics = "summary"}).  The default is \code{FALSE}.}
+
+\item{version}{a character string specifying whether the table or plot
+should mimic the content and look of recent SPSS versions (\code{"modern"})
+or older versions (<24; \code{"legacy"}).  For the table, the main
+difference in terms of content is that small p-values are displayed
+differently.}
 
 \item{standardized}{a logical indicating whether to return standardized
 residuals and fitted values (\code{TRUE}), or residuals and fitted values on
@@ -69,40 +90,56 @@ function \code{\link[graphics]{plot}}).}
 values are \code{"histogram"} for a histogram of the residuals, or
 \code{"scatter"} for a scatterplot of the standardized residuals against the
 standardized fitted values.}
-
-\item{main, xlab, ylab}{the plot title and axis labels.}
 }
 \value{
-An object of class \code{"regressionSPSS"} with the following
+An object of class \code{"regression_SPSS"} with the following
 components:
 \describe{
   \item{\code{models}}{a list in which each component is an ojbect of class
   \code{"lm"} as returned by function \code{\link[stats]{lm}}.}
+  \item{\code{summaries}}{a list in which each component is an ojbect of
+  class \code{"summary.lm"} as returned by the
+  \code{\link[stats:summary.lm]{summary}} method for objects of class
+  \code{"lm"}.}
   \item{\code{response}}{a character string containing the name of the
   response variable.}
   \item{\code{method}}{a character string specifying whether the nested
   models are increasing in dimension by entering additional variables
   (\code{"enter"}) or decreasing in dimension by removing variables
   (\code{"remove"}).}
-  \item{\code{change}}{a logical indicating whether tests on the
-  \eqn{R^2}{R-squared} change are included in model summaries.}
 }
 
+The \code{to_SPSS} method returns an object of class \code{"SPSS_table"}
+which contains all relevant information in the required format to produce
+the LaTeX table.  See \code{\link{to_latex}} for possible components and
+how to further customize the LaTeX table based on the returned object.
+
 The \code{print} method produces a LaTeX table that mimics the look of SPSS
-output (version <24).
+output.
 
 The \code{coef}, \code{df.residual}, \code{fitted} and \code{residuals}
 methods return the coefficients, residual degrees of freedom, fitted
 values and residuals, respectively, of the \emph{last} model (to mimic
 SPSS functionality).
 
-Similarly, the \code{plot} method creates the specified plot for the
-\emph{last} model.
+Similarly, the \code{plot} method returns the specified plot for the
+\emph{last} model as an object of class \code{"\link[ggplot2]{ggplot}"},
+which produces the plot when printed.
 }
 \description{
 Perform linear regression on variables of a data set.  The output is printed
-as a LaTeX table that mimics the look of SPSS output (version <24), and plots
-of the results mimic the look of SPSS graphs.
+as a LaTeX table that mimics the look of SPSS output, and plots of the
+results mimic the look of SPSS graphs.
+}
+\details{
+The \code{print} method first calls the \code{to_SPSS} method followed
+by \code{\link{to_latex}}.  Further customization can be done by calling
+those two functions separately, and modifying the object returned by
+\code{to_SPSS}.
+}
+\note{
+LaTeX tables that mimic recent versions of SPSS (\code{version = "modern"})
+may require several LaTeX compilations to be displayed correctly.
 }
 \examples{
 # load data
@@ -129,9 +166,8 @@ fit3 <- regression(logMarketValue ~ Age + AgeSq,
                                     Foreign,
                    logMarketValue ~ Age + AgeSq + Contract +
                                     Foreign + Position,
-                   data = Eredivisie, labels = 2:4,
-                   change = TRUE)
-fit3                             # print LaTeX table
+                   data = Eredivisie, labels = 2:4)
+print(fit3, change  = TRUE)      # print LaTeX table
 plot(fit3, which = "histogram")  # diagnostic plot
 
 }

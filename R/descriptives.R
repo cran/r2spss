@@ -7,14 +7,28 @@
 #'
 #' Compute descriptive statistics of numeric variables of a data set (number of
 #' observations, minimum, maximum, mean, standard deviaiton).  The output is
-#' printed as a LaTeX table that mimics the look of SPSS output (version <24).
+#' printed as a LaTeX table that mimics the look of SPSS output.
+#'
+#' The \code{print} method first calls the \code{to_SPSS} method followed
+#' by \code{\link{to_latex}}.  Further customization can be done by calling
+#' those two functions separately, and modifying the object returned by
+#' \code{to_SPSS}.
 #'
 #' @param data  a data frame containing the variables.
 #' @param variables  a character vector specifying numeric variables for which
 #' to compute descriptive statistics.
+#' @param object,x  an object of class \code{"descriptives_SPSS"} as returned
+#' by function \code{descriptives}.
+#' @param digits  an integer giving the number of digits after the comma to be
+#' printed in the SPSS table.
+#' @param \dots additional arguments to be passed down to
+#' \code{\link{format_SPSS}}.
+#' @param version  a character string specifying whether the table should
+#' mimic the look of recent SPSS versions (\code{"modern"}) or older versions
+#' (<24; \code{"legacy"}).
 #'
 #' @return
-#' An object of class \code{"descriptivesSPSS"} with the following components:
+#' An object of class \code{"descriptives_SPSS"} with the following components:
 #' \describe{
 #'   \item{\code{classes}}{a character vector giving the (first) class of the
 #'   variables of interest.}
@@ -23,8 +37,17 @@
 #'   \item{\code{n}}{an integer giving the number of observations.}
 #' }
 #'
+#' The \code{to_SPSS} method returns an object of class \code{"SPSS_table"}
+#' which contains all relevant information in the required format to produce
+#' the LaTeX table.  See \code{\link{to_latex}} for possible components and
+#' how to further customize the LaTeX table based on the returned object.
+#'
 #' The \code{print} method produces a LaTeX table that mimics the look of SPSS
-#' output (version <24).
+#' output.
+#'
+#' @note
+#' LaTeX tables that mimic recent versions of SPSS (\code{version = "modern"})
+#' may require several LaTeX compilations to be displayed correctly.
 #'
 #' @author Andreas Alfons
 #'
@@ -53,8 +76,8 @@ descriptives <- function(data, variables) {
   desc <- do.call(rbind, lapply(x, .descriptives))
   row.names(desc) <- variables
   # return descriptives
-  out <- list(classes=classes, descriptives=desc, n=n)
-  class(out) <- "descriptivesSPSS"
+  out <- list(classes = classes, descriptives = desc, n = n)
+  class(out) <- "descriptives_SPSS"
   out
 }
 
@@ -69,45 +92,45 @@ descriptives <- function(data, variables) {
   mean <- mean(x)
   sd <- sd(x)
   # return data frame
-  data.frame(N=n, Minimum=range[1], Maximum=range[2], Mean=mean,
-             "Std. Deviation"=sd, check.names=FALSE)
+  data.frame(N = n, Minimum = range[1], Maximum = range[2], Mean = mean,
+             "Std. Deviation" = sd, check.names = FALSE)
 }
 
 
 #' @rdname descriptives
-#'
-#' @param x  an object of class \code{"descriptivesSPSS"} as returned by
-#' function \code{descriptives}.
-#' @param digits  an integer giving the number of digits after the comma to be
-#' printed in the LaTeX table.
-#' @param \dots currently ignored.
-#'
 #' @export
 
-print.descriptivesSPSS <- function(x, digits = 2, ...) {
-  # format descriptives
-  d <- ifelse(x$classes == "integer", 0, digits)
-  formatted <- cbind(
-    formatSPSS(x$descriptives[, "N"]),
-    formatSPSS(x$descriptives[, c("Minimum", "Maximum")], digits=d),
-    formatSPSS(x$descriptives[, c("Mean", "Std. Deviation")], digits=digits)
-  )
-  # initialize LaTeX table
-  cat("\\begin{tabular}{|l|r|r|r|r|r|}\n")
-  # print table header
-  cat("\\noalign{\\smallskip}\n")
-  cat("\\multicolumn{6}{c}{\\textbf{Descriptive Statistics}} \\\\\n")
-  cat("\\noalign{\\smallskip}\\hline\n")
-  cat(" & & & & & \\multicolumn{1}{|c|}{Std.} \\\\\n")
-  cat(" & \\multicolumn{1}{|c|}{N} & \\multicolumn{1}{|c|}{Minimum} & \\multicolumn{1}{|c|}{Maximum} & \\multicolumn{1}{|c|}{Mean} & \\multicolumn{1}{|c|}{Deviation} \\\\\n")
-  cat("\\hline\n")
-  # print descriptives for each variable
-  for (variable in rownames(formatted)) {
-    cat(variable, "&", paste0(formatted[variable, ], collapse=" & "), "\\\\\n")
+to_SPSS.descriptives_SPSS <- function(object, digits = 2, ...) {
+  # put table of results into SPSS format
+  p <- ncol(object$descriptives)
+  descriptives <- rbind(object$descriptives,
+                        "Valid N (listwise)" = c(object$n, rep.int(NA, p)))
+  # define header with line breaks
+  col_names <- names(descriptives)
+  header <- c("", wrap_text(col_names, limit = 10))
+  # format table nicely
+  args <- list(descriptives, digits = digits, ...)
+  if (is.null(args$check_int)) {
+    args$check_int <- col_names %in% c("Minimum", "Maximum")
   }
-  # print complete cases
-  cat("Valid N (listwise) &", x$n, "& & & & \\\\\n")
-  # finalize LaTeX table
-  cat("\\hline\\noalign{\\smallskip}\n")
-  cat("\\end{tabular}\n")
+  formatted <- do.call(format_SPSS, args)
+  # construct return object
+  spss <- list(table = formatted, main = "Descriptive Statistics",
+               header = header, row_names = TRUE, info = 0)
+  class(spss) <- "SPSS_table"
+  spss
+}
+
+
+#' @rdname descriptives
+#' @export
+
+print.descriptives_SPSS <- function(x, version = r2spss_options$get("version"),
+                                    ...) {
+  # initializations
+  version <- match.arg(version, choices = get_version_values())
+  # put table of results into SPSS format
+  spss <- to_SPSS(x, ...)
+  # print LaTeX table
+  to_latex(spss, version = version)
 }
