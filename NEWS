@@ -1,3 +1,17 @@
+Changes in r2spss version 0.3.1
+
+    + Renamed functions paletteSPSS(), numberSPSS(), and substrSPSS() to
+      palette_SPSS(), number_SPSS(), and substr_SPSS() to be in line with
+      naming conventions.
+
+    + Better handling of major and minor grid lines in to_latex().  The former
+      can also be partial lines, and the latter can be suppressed globally via
+      'r2spss_options'.
+
+    + Function chisq_test() in case of a test on independence now also returns
+      results of a Mantel-Haenszel test of linear association.
+
+
 Changes in r2spss version 0.3.0
 
     + Complete redesign of the inner workings of creating the LaTeX tables,

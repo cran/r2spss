@@ -49,6 +49,8 @@
 #'   \eqn{\chi^{2}}{chi-squared} test.}
 #'   \item{\code{lr}}{a list containing the results of a likelihood ratio
 #'   test (only test on independence).}
+#'   \item{\code{MH}}{a list containing the results of a Mantel-Haenszel test
+#'   of linear association (only test on independence).}
 #'   \item{\code{observed}}{a table containing the observed frequencies.}
 #'   \item{\code{expected}}{a vector or matrix containing the expected
 #'   frequencies.}
@@ -97,7 +99,7 @@
 #'
 #' @keywords htest
 #'
-#' @importFrom stats pchisq
+#' @importFrom stats cor pchisq
 #' @export
 
 chisq_test <- function(data, variables, p = NULL) {
@@ -164,8 +166,12 @@ chisq_test <- function(data, variables, p = NULL) {
     stat <- 2 * sum(observed[keep] * log(observed[keep] / expected[keep]))
     p <- pchisq(stat, df = df, lower.tail = FALSE)
     lr <- list(statistic = stat, parameter = df, p.value = p)
+    # perform Mantel-Haenszel test (linear-by-linear association)
+    stat <- (n-1) * cor(as.numeric(row), as.numeric(col))^2
+    p <- pchisq(stat, df = 1, lower.tail = FALSE)
+    MH <- list(statistic = stat, parameter = 1, p.value = p)
     # construct object
-    out <- list(chisq = chisq, lr = lr, observed = observed,
+    out <- list(chisq = chisq, lr = lr, MH = MH, observed = observed,
                 expected = expected, n = n, r = r, c = c,
                 variables = variables[1:2], type = "independence")
   }
@@ -202,9 +208,11 @@ to_SPSS.chisq_test_SPSS <- function(object, statistics = c("test", "frequencies"
                                 check.names = FALSE)
       # format table nicely
       formatted <- format_SPSS(frequencies, digits = digits[1], ...)
+      # define positions for minor grid lines
+      minor <- seq_len(nrow(formatted) - 1)
       # construct list containing all necessary information
-      spss <- list(table = formatted, main = object$variables,
-                   header = TRUE, row_names = TRUE, info = 0)
+      spss <- list(table = formatted, main = object$variables, header = TRUE,
+                   row_names = TRUE, info = 0, minor = minor)
     } else if (object$type == "independence") {
       # add totals
       observed <- cbind(observed, Total = rowSums(observed))
@@ -236,12 +244,17 @@ to_SPSS.chisq_test_SPSS <- function(object, statistics = c("test", "frequencies"
       top <- data.frame(first = c(1:3, 4, nc), last = c(1:3, nc-1, nc),
                         text = c("", "", "", object$variables[2], ""))
       header <- list(top, cn)
-      # define positions for minor grid lines
-      minor <- data.frame(row = 2 * seq_len(object$r-1), first = 2,
-                          last = c(ncol(crosstab)))
+      # define major grid lines
+      major <- rbind(data.frame(row = 2 * seq_len(object$r-1),
+                                first = 2, last = ncol(crosstab)),
+                     data.frame(row = 2 * object$r, first = 1,
+                                last = ncol(crosstab)))
+      # define minor grid lines
+      minor <- data.frame(row = seq(from = 1, by = 2, length.out = object$r+1),
+                          first = 3, last = ncol(crosstab))
       # construct list containing all necessary information
       spss <- list(table = crosstab, main = main, header = header,
-                   row_names = FALSE, info = 3, major = 2*object$r,
+                   row_names = FALSE, info = 3, major = major,
                    minor = minor)
     } else stop("type of test not supported")
 
@@ -276,21 +289,27 @@ to_SPSS.chisq_test_SPSS <- function(object, statistics = c("test", "frequencies"
                          sprintf(fmt, smallest), ".")
       footnotes <- data.frame(marker = "a", row = 1, column = 1,
                               text = wrap_text(footnote, limit = 30))
+      # define positions for minor grid lines
+      minor <- seq_len(nrow(chisq) - 1)
       # construct list containing all necessary information
-      spss <- list(table = chisq, main = "Test Statistics",
-                   header = TRUE, row_names = TRUE, info = 0,
-                   footnotes = footnotes, version = version)
+      spss <- list(table = chisq, main = "Test Statistics", header = TRUE,
+                   row_names = TRUE, info = 0, footnotes = footnotes,
+                   minor = minor, version = version)
     } else if (object$type == "independence") {
       # put test results into SPSS format
-      rn <- c("Pearson Chi-Square", "Likelihood Ratio", "N of Valid Cases")
+      rn <- c("Pearson Chi-Square", "Likelihood Ratio",
+              "Linear-by-Linear Association", "N of Valid Cases")
       chisq <- data.frame("Value" = c(object$chisq$statistic,
                                       object$lr$statistic,
+                                      object$MH$statistic,
                                       object$n),
                           "df" = as.integer(c(object$chisq$parameter,
                                               object$lr$parameter,
+                                              object$MH$parameter,
                                               NA_integer_)),
                           "Asymp. Sig. (2-sided)" = c(object$chisq$p.value,
                                                       object$lr$p.value,
+                                                      object$MH$p.value,
                                                       NA_real_),
                           check.names = FALSE, row.names = rn)
       # format table nicely
@@ -300,6 +319,8 @@ to_SPSS.chisq_test_SPSS <- function(object, statistics = c("test", "frequencies"
       formatted <- do.call(format_SPSS, args)
       # define header with line breaks
       header <- c("", wrap_text(names(chisq), limit = 15))
+      # define row labels with line breaks
+      row_labels <- wrap_text(rn, limit = 20)
       # define footnote
       footnote <- paste0(n_too_small, " cells (", sprintf(fmt, p_too_small),
                          "\\%) have expected count less than 5. ",
@@ -307,10 +328,12 @@ to_SPSS.chisq_test_SPSS <- function(object, statistics = c("test", "frequencies"
                          sprintf(fmt, smallest), ".")
       footnotes <- data.frame(marker = "a", row = 1, column = 1,
                               text = wrap_text(footnote, limit = 50))
+      # define positions for minor grid lines
+      minor <- seq_len(nrow(formatted) - 1)
       # construct list containing all necessary information
       spss <- list(table = formatted, main = "Chi-Square Tests",
-                   header = header, row_names = TRUE, info = 0,
-                   footnotes = footnotes, version = version)
+                   header = header, row_names = row_labels, info = 0,
+                   footnotes = footnotes, minor = minor, version = version)
     } else stop("type of test not supported")
 
   } else stop ("type of 'statistics' not supported")  # shouldn't happen

@@ -43,7 +43,9 @@ different for current and older SPSS versions.  These objects contain a
 component \code{"version"} which will passed to the \code{"data.frame"}
 method to ensure that the content and look of the table match.  Other
 tables have the same content irrespective of the SPSS version, and this
-argument controls the look of those tables.}
+argument controls the look of those tables.  The default is to inherit
+from the global option within the current \R session (see
+\code{\link{r2spss_options}}).}
 
 \item{main}{a single character string defining the main title of the SPSS
 table, or \code{NULL} to suppress the main title.}
@@ -125,24 +127,25 @@ possible to supply a data frame with the following columns:
   footnote.}
 }}
 
-\item{major}{an integer vector specifying the rows of the SPSS table after
-which to draw major grid lines (which always stretch across all columns o
-the table), or \code{NULL} to suppress any major grid lines.  This is only
-relevant for drawing lines in between rows of the table body.  Horizontal
-table borders are always drawn.}
-
-\item{minor}{an integer vector specifying the rows of the SPSS table after
-which to draw minor grid lines that stretch across all columns of the table,
-or \code{NULL} to suppress any minor grid lines.  Alternatively, this can
-be a data frame with the following columns defining partial lines:
+\item{major, minor}{an integer vector specifying the rows of the SPSS
+table after which to draw major or minor grid lines that stretch across
+all columns of the table, or \code{NULL} to suppress the respective grid
+lines.  Alternatively, each of these arguments can be a data frame with
+the following columns defining partial grid lines:
 \describe{
   \item{\code{row}}{an integer vector specifying the rows of the SPSS table
-  after which to draw minor grid lines.}
+  after which to draw grid lines.}
   \item{\code{first}}{an integer vector specifying the first column of each
   partial line.}
   \item{\code{last}}{an integer vector specifying the last column of each
   partial line.}
-}}
+}
+The only difference between the two type of grid lines is that minor grid
+lines can also be suppressed globally within the current \R session by
+setting \code{r2spss_options$set(minor = FALSE)}, see
+\code{\link{r2spss_options}}.  Also note that these arguments only control
+the grid lines in between rows of the table body.  Horizontal table borders
+are always drawn.}
 }
 \value{
 Nothing is returned, the function is called for its side effects.

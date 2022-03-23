@@ -232,7 +232,7 @@ theme_SPSS <- function(base_size = 12, base_family = "",
 #' palette of recent SPSS versions (\code{"modern"}) or older versions (<24;
 #' \code{"legacy"}).
 #'
-#' @return  \code{paletteSPSS} returns a character vector specifying up to 30
+#' @return  \code{palette_SPSS} returns a character vector specifying up to 30
 #' colors as used by SPSS.
 #'
 #' @author Andreas Alfons
@@ -255,24 +255,29 @@ theme_SPSS <- function(base_size = 12, base_family = "",
 #'
 #' @keywords color
 #'
-#' @importFrom grDevices rgb
 #' @export
 
-paletteSPSS <- function(n = NULL, version = r2spss_options$get("version")) {
+palette_SPSS <- function(n = NULL, version = r2spss_options$get("version")) {
   # initializations
   version <- match.arg(version, choices = get_version_values())
-  # define red, green and blue vectors
+  # define color vectors
   if (version == "legacy") {
-    red <-   c( 62,  46, 211, 121, 251, 239,  72, 204, 122,  10, 248, 221,  26, 204, 187, 153,   0, 182, 255, 121, 112,  51, 172, 162,  93, 228,  39, 184, 102,  13)
-    green <- c( 88, 184, 206,  40, 248,  51, 194, 204, 170,  86, 152, 186,  95, 255,  63, 153,   0, 231, 255, 122, 220,  51, 208,  22,  97, 228, 139, 155, 102, 141)
-    blue <-  c(172,  72, 151, 125, 115,  56, 197, 204, 213,  44,  29, 241, 118, 204, 127, 153,   0, 232, 255, 167, 132,  51, 238,  25, 255, 228, 172, 201, 102,  70)
+    colors <- c("#3E58AC", "#2EB848", "#D3CE97", "#79287D", "#FBF873",
+                "#EF3338", "#48C2C5", "#CCCCCC", "#7AAAD5", "#0A562C",
+                "#F8981D", "#DDBAF1", "#1A5F76", "#CCFFCC", "#BB3F7F",
+                "#999999", "#000000", "#B6E7E8", "#FFFFFF", "#797AA7",
+                "#70DC84", "#333333", "#ACD0EE", "#A21619", "#5D61FF",
+                "#E4E4E4", "#278BAC", "#B89BC9", "#666666", "#0D8D46")
   } else {
-    red <-   c( 17,   0, 159, 250,  87,  25,   0, 238, 178,   0,   1, 138, 165, 236,  69,  92, 208, 204, 225, 237,  28,  92, 225,   9,  90, 155, 207, 150,  63, 105)
-    green <- c(146,  93,  24,  77,   4, 128,  45,  83, 134, 157,  39,  56, 110, 230,  70, 202,  83, 127, 188,  75, 205, 113, 139,  38, 100,   0, 172, 145, 235,  41)
-    blue <-  c(232,  93,  83,  86,   8,  56, 156, 139,   0, 154,  73,   0, 255, 208,  71, 136,  52, 228,  29,  75, 205,  72,  14, 114,  94,   0, 227, 145, 124, 196)
+    colors <- c("#1192E8", "#005D5D", "#9F1853", "#FA4D56", "#570408",
+                "#198038", "#002D9C", "#EE538B", "#B28600", "#009D9A",
+                "#012749", "#8A3800", "#A56EFF", "#ECE6D0", "#454647",
+                "#5CCA88", "#D05334", "#CC7FE4", "#E1BC1D", "#ED4B4B",
+                "#1CCDCD", "#5C7148", "#E18B0E", "#092672", "#5A645E",
+                "#9B0000", "#CFACE3", "#969191", "#3FEB7C", "#6929C4")
   }
   # check number of colors to return
-  max <- length(red)
+  max <- length(colors)
   if (is.numeric(n) && length(n) > 0) {
     n <- n[1]
     if (n < 1) {
@@ -282,20 +287,27 @@ paletteSPSS <- function(n = NULL, version = r2spss_options$get("version")) {
     }
     if (n <= max) {
       keep <- seq_len(n)
-      red <- red[keep]
-      green <- green[keep]
-      blue <- blue[keep]
+      colors <- colors[keep]
     } else {
       warning("only ", max, " colors available; returning those colors",
               call. = FALSE)
     }
   }
   # return colors
-  rgb(red, green, blue, maxColorValue = 255)
+  colors
 }
 
 
-#' @rdname paletteSPSS
+#' @rdname palette_SPSS
+#' @export
+
+paletteSPSS <- function(n = NULL, version = r2spss_options$get("version")) {
+  .Deprecated("palette_SPSS")
+  palette_SPSS(n, version = version)
+}
+
+
+#' @rdname palette_SPSS
 #'
 #' @param direction  an integer giving the direction to travel through the
 #' palette.  Possible values are 1 for forward (the default) and -1 for
@@ -312,14 +324,14 @@ SPSS_pal <- function(version = r2spss_options$get("version"), direction = 1) {
   version <- match.arg(version, choices = get_version_values())
   # return function to be used for discrete color scales in ggolot2
   function(n) {
-    pal <- suppressWarnings(paletteSPSS(n, version))
+    pal <- suppressWarnings(palette_SPSS(n, version))
     if (direction == -1) pal <- rev(pal)
     pal
   }
 }
 
 
-#' @rdname paletteSPSS
+#' @rdname palette_SPSS
 #'
 #' @param \dots  additional arguments to be passed to
 #' \code{\link[ggplot2]{discrete_scale}}.
@@ -339,7 +351,7 @@ scale_color_SPSS <- function(..., version = r2spss_options$get("version"),
 }
 
 
-#' @rdname paletteSPSS
+#' @rdname palette_SPSS
 #' @export
 
 scale_colour_SPSS <- function(..., version = r2spss_options$get("version"),
@@ -348,7 +360,7 @@ scale_colour_SPSS <- function(..., version = r2spss_options$get("version"),
 }
 
 
-#' @rdname paletteSPSS
+#' @rdname palette_SPSS
 #' @export
 
 scale_fill_SPSS <- function(..., version = r2spss_options$get("version"),
@@ -362,14 +374,14 @@ scale_fill_SPSS <- function(..., version = r2spss_options$get("version"),
 #' Format axis tick labels in a similar manner to SPSS to mimic the look of
 #' SPSS graphs.
 #'
-#' \code{numberSPSS} is a wrapper for \code{\link[scales]{number}} that by
+#' \code{number_SPSS} is a wrapper for \code{\link[scales]{number}} that by
 #' default does not put a separator every 3 digits so separate thousands.  It
 #' mainly exists to prevent scientific notation in axis tick labels, hence it
 #' is typically supplied as the \code{labels} argument of
 #' \code{\link[ggplot2]{scale_x_continuous}} or
 #' \code{\link[ggplot2]{scale_y_continuous}}.
 #'
-#' \code{substrSPSS} is a wrapper for \code{\link{substr}} to cut character
+#' \code{substr_SPSS} is a wrapper for \code{\link{substr}} to cut character
 #' strings by default to the first 8 characters, which is SPSS behavior for
 #' the tick labels of a discrete axis in some (but not all) plots.  It is
 #' typically supplied as the  \code{labels} argument of
@@ -378,8 +390,8 @@ scale_fill_SPSS <- function(..., version = r2spss_options$get("version"),
 #'
 #' @name labels_SPSS
 #'
-#' @param x  for \code{numberSPSS}, a numeric vector to format.  For
-#' \code{substrSPSS}, a vector of character strings to be cut.
+#' @param x  for \code{number_SPSS}, a numeric vector to format.  For
+#' \code{substr_SPSS}, a vector of character strings to be cut.
 #' @param big.mark  a character string to be inserted every 3 digits to
 #' separate thousands.  The default is an empty string for no separation.
 #' @param \dots  additional arguments to be passed to
@@ -399,7 +411,7 @@ NULL
 #' @importFrom scales number
 #' @export
 
-numberSPSS <- function(x, big.mark = "", ...) {
+number_SPSS <- function(x, big.mark = "", ...) {
   scales::number(x, big.mark = big.mark, ...)
 }
 
@@ -407,8 +419,26 @@ numberSPSS <- function(x, big.mark = "", ...) {
 #' @rdname labels_SPSS
 #' @export
 
-substrSPSS <- function(x, start = 1, stop = 8) {
+numberSPSS <- function(x, big.mark = "", ...) {
+  .Deprecated("number_SPSS")
+  number_SPSS(x, big.mark = big.mark, ...)
+}
+
+
+#' @rdname labels_SPSS
+#' @export
+
+substr_SPSS <- function(x, start = 1, stop = 8) {
   substr(x, start = start, stop = stop)
+}
+
+
+#' @rdname labels_SPSS
+#' @export
+
+substrSPSS <- function(x, start = 1, stop = 8) {
+  .Deprecated("substr_SPSS")
+  substr_SPSS(x, start = start, stop = stop)
 }
 
 

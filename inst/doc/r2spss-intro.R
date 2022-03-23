@@ -14,7 +14,7 @@ library("r2spss")
 #  r2spss.sty(path = ".")
 
 ## ------------------------------------------------------------------------
-r2spss_options$set(version = "legacy")
+r2spss_options$set(version = "legacy", minor = FALSE)
 
 ## ----results="hide", message=FALSE, warning=FALSE------------------------
 data("Eredivisie")

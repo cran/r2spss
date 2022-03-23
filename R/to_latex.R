@@ -96,23 +96,25 @@
 #'   \item{\code{text}}{a character vector containing the text of each
 #'   footnote.}
 #' }
-#' @param major  an integer vector specifying the rows of the SPSS table after
-#' which to draw major grid lines (which always stretch across all columns o
-#' the table), or \code{NULL} to suppress any major grid lines.  This is only
-#' relevant for drawing lines in between rows of the table body.  Horizontal
-#' table borders are always drawn.
-#' @param minor  an integer vector specifying the rows of the SPSS table after
-#' which to draw minor grid lines that stretch across all columns of the table,
-#' or \code{NULL} to suppress any minor grid lines.  Alternatively, this can
-#' be a data frame with the following columns defining partial lines:
+#' @param major,minor  an integer vector specifying the rows of the SPSS
+#' table after which to draw major or minor grid lines that stretch across
+#' all columns of the table, or \code{NULL} to suppress the respective grid
+#' lines.  Alternatively, each of these arguments can be a data frame with
+#' the following columns defining partial grid lines:
 #' \describe{
 #'   \item{\code{row}}{an integer vector specifying the rows of the SPSS table
-#'   after which to draw minor grid lines.}
+#'   after which to draw grid lines.}
 #'   \item{\code{first}}{an integer vector specifying the first column of each
 #'   partial line.}
 #'   \item{\code{last}}{an integer vector specifying the last column of each
 #'   partial line.}
 #' }
+#' The only difference between the two type of grid lines is that minor grid
+#' lines can also be suppressed globally within the current \R session by
+#' setting \code{r2spss_options$set(minor = FALSE)}, see
+#' \code{\link{r2spss_options}}.  Also note that these arguments only control
+#' the grid lines in between rows of the table body.  Horizontal table borders
+#' are always drawn.
 #' @param version  a character string specifying whether the table should
 #' mimic the look of recent SPSS versions (\code{"modern"}) or older versions
 #' (<24; \code{"legacy"}).  For the \code{"SPSS_table"} method, note that also
@@ -121,7 +123,9 @@
 #' component \code{"version"} which will passed to the \code{"data.frame"}
 #' method to ensure that the content and look of the table match.  Other
 #' tables have the same content irrespective of the SPSS version, and this
-#' argument controls the look of those tables.
+#' argument controls the look of those tables.  The default is to inherit
+#' from the global option within the current \R session (see
+#' \code{\link{r2spss_options}}).
 #' @param \dots  for the \code{"data.frame"} method, additional arguments to be
 #' passed to \code{\link{format_SPSS}}.  For the \code{"SPSS_table"} method,
 #' additional arguments are currently ignored.
@@ -316,19 +320,33 @@ to_latex.data.frame <- function(object, main = NULL, sub = NULL, header = TRUE,
   # check major grid lines
   drawMajor <- !is.null(major)
   if (drawMajor) {
-    if (!is.numeric(major)) {
-      stop("'major' must be an integer vector")
-    }
-    major <- sort(as.integer(major))
-    keep <- (major > 0) & (major < d[1])
-    if (!all(keep)) {
-      major <- major[keep]
-      warning("some indices for major grid lines are out of bounds; ",
-              "those have been discarded", call. = FALSE)
+    if (is.data.frame(major)) {
+      # draw only partial lines
+      partialMajor <- TRUE
+      # perform checks
+      targetNames <- c("row", "first", "last")
+      if (!all(targetNames %in% names(major))) {
+        stop("major' must have columns ",
+             paste(paste0("'", targetNames, "'"), collapse = ", "))
+      }
+    } else {
+      # draw lines across full table
+      partialMajor <- FALSE
+      # perform checks
+      if (!is.numeric(major)) {
+        stop("'major' must be an integer vector or data.frame")
+      }
+      major <- sort(as.integer(major))
+      keep <- (major > 0) & (major < d[1])
+      if (!all(keep)) {
+        major <- major[keep]
+        warning("some indices for major grid lines are out of bounds; ",
+                "those have been discarded", call. = FALSE)
+      }
     }
   }
   # check minor grid lines
-  drawMinor <- !is.null(minor)
+  drawMinor <- isTRUE(r2spss_options$get("minor")) && !is.null(minor)
   if (drawMinor) {
     if (is.data.frame(minor)) {
       # draw only partial lines
@@ -473,16 +491,24 @@ to_latex.data.frame <- function(object, main = NULL, sub = NULL, header = TRUE,
           "\\\\\n")
     }
     # if requested, draw major grid line
-    if (drawMajor && (i %in% major)) cat(latexMajorLine(version = version))
+    if (drawMajor) {
+      if (partialMajor) {
+        which <- match(i, major$row)
+        if (!is.na(which)) {
+          cat(latexGridLine(major[which, "first"], major[which, "last"],
+                            version = version))
+        }
+      } else if (i %in% major) cat(latexGridLine(version = version))
+    }
     # if requested, draw minor grid line
     if (drawMinor) {
       if (partialMinor) {
         which <- match(i, minor$row)
         if (!is.na(which)) {
-          cat(latexMinorLine(minor[which, "first"], minor[which, "last"],
-                             version = version))
+          cat(latexGridLine(minor[which, "first"], minor[which, "last"],
+                            version = version))
         }
-      } else if (i %in% minor) cat(latexMinorLine(version = version))
+      } else if (i %in% minor) cat(latexGridLine(version = version))
     }
   }
   # draw line below table body
@@ -933,14 +959,22 @@ latexTopLine <- latexBottomLine <- function(version = "modern") {
   line
 }
 
-latexMajorLine <- function(version = "modern") {
-  legacy <- version == "legacy"
-  line <- latexLine()
-  if (!legacy) line <- paste0("\\arrayrulecolor{darkgraySPSS}", line)
-  line
-}
+# latexMajorLine <- function(version = "modern") {
+#   legacy <- version == "legacy"
+#   line <- latexLine()
+#   if (!legacy) line <- paste0("\\arrayrulecolor{darkgraySPSS}", line)
+#   line
+# }
+#
+# latexMinorLine <- function(first = NULL, last = NULL, version = "modern") {
+#   legacy <- version == "legacy"
+#   if (is.null(first) || is.null(last)) line <- latexLine()
+#   else line <- latexPartialLine(first, last)
+#   if (!legacy) line <- paste0("\\arrayrulecolor{darkgraySPSS}", line)
+#   line
+# }
 
-latexMinorLine <- function(first = NULL, last = NULL, version = "modern") {
+latexGridLine <- function(first = NULL, last = NULL, version = "modern") {
   legacy <- version == "legacy"
   if (is.null(first) || is.null(last)) line <- latexLine()
   else line <- latexPartialLine(first, last)

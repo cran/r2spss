@@ -4,10 +4,10 @@
 # --------------------------------------
 
 
-#' Deprecated functions in r2spss
+#' Deprecated plot functions in r2spss
 #'
-#' These functions are deprecated and may be removed as soon as the next
-#' release of \pkg{r2spss}.  The plot functions \code{plotSPSS},
+#' These plot functions are deprecated and may be removed as soon as the
+#' next release of \pkg{r2spss}.  The functions \code{plotSPSS},
 #' \code{linesSPSS}, \code{boxSPSS}, and \code{histSPSS} are built around
 #' base \R graphics and have been superseded by functions built on
 #' \code{\link[ggplot2:ggplot2-package]{ggplot2}}.
@@ -199,7 +199,7 @@ linesSPSS <- function(data, variables, index = NULL,
 # internal function for matrix line plot with different defaults
 .matlines <- function(x, y, ..., type = c("l", "o"), xlim = NULL, ylim = NULL,
                       mar = NULL, bg = "#F0F0F0", lty = 1, lwd = 1.5, pch = 1,
-                      col = paletteSPSS(), main = NULL, xlab = NULL,
+                      col = palette_SPSS(), main = NULL, xlab = NULL,
                       ylab = NULL, title = NULL, font.lab = 2, cex.lab = 1.2,
                       las = 1,
                       # the following arguments are currently ignored
